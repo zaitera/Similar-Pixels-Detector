@@ -10,6 +10,17 @@ CBLUE   = '\33[34m'
 NEG = '\033[5;37;40m'
 NEGEND = '\033[0;37;40m'
 
+def isImageOnGrayScale(image):
+    b, g, r = cv2.split(image)
+    aux1 = b - g
+    aux2 = g - r
+    cv2.bitwise_not(aux1,aux1)
+    cv2.bitwise_not(aux2, aux2)
+    if((aux1.all()) and (aux2.all())):
+        return True
+    else:
+        return False
+
 def mouseCallBack(event,x,y,flags,param):
     if event == cv2.EVENT_LBUTTONDOWN:   
         if(read_mode == cv2.IMREAD_ANYCOLOR):
@@ -21,16 +32,14 @@ if __name__ == "__main__":
     image_name = input("What's the image's name: ")
     print(image_name)
     if(not(path.isfile("./"+image_name))):
-        exit("File doesn't exist")
-    read_mode = input("For RGB click 1, for GrayScale click 2: ")
-    if(read_mode == "1"):
-        read_mode = cv2.IMREAD_ANYCOLOR
-    elif (read_mode == "2"):
+        exit("File doesn't exist")   
+    img = cv2.imread(image_name, cv2.IMREAD_ANYCOLOR)
+    if(isImageOnGrayScale(img)):
+        print("Grayscale detected!")
         read_mode = cv2.IMREAD_GRAYSCALE
     else:
-        exit("Invalid Mode")
-    print(read_mode)    
-    img = cv2.imread(image_name, read_mode)
+        print("RGB")
+        read_mode = cv2.IMREAD_ANYCOLOR
     cv2.namedWindow('image')
     cv2.setMouseCallback('image',mouseCallBack)
     cv2.imshow('image',img)
