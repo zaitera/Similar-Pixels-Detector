@@ -111,39 +111,81 @@ if __name__ == "__main__":
     if(file_type == "2"):
         cv2.imshow('Original', img)
     clicked_flag = False
-    while True:
-        if(file_type == "1"):
-            flag, img = cap.read()
-            if flag:
-                # The frame is ready and already captured
-                if(read_mode == cv2.IMREAD_GRAYSCALE):
-                    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                cv2.imshow('Original', img)           
-                pos_frame = cap.get(cv2.CAP_PROP_POS_FRAMES)
-                if(clicked_flag):
-                    distance = distanceMatCalculator(current_pixel_reference, img, read_mode)
-                    result = insertRedByBinary(distance, img, read_mode)
-                    cv2.namedWindow('Painted')
-                    cv2.imshow('Painted', result)
-                #print (str(pos_frame)+" frames ", clicked_flag)
-            else:
-                # The next frame is not ready, so we try to read it again
-                cap.set(cv2.CAP_PROP_POS_FRAMES, pos_frame-1)
-                print ("frame is not ready")
-                # It is better 1to wait for a while for the next frame to be ready
-                cv2.waitKey(10)
-            if cap.get(cv2.CAP_PROP_POS_FRAMES) == cap.get(cv2.CAP_PROP_FRAME_COUNT):
-                # If the number of captured frames is equal to the total number of frames,
-                # we stop
+    if(file_type == "1"):
+        if(webcam):
+            while True:
+                flag, img = cap.read()
+                if flag:
+                    # The frame is ready and already captured
+                    if(read_mode == cv2.IMREAD_GRAYSCALE):
+                        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    cv2.imshow('Original', img)
+                    if(clicked_flag):
+                        distance = distanceMatCalculator(
+                            current_pixel_reference, img, read_mode)
+                        result = insertRedByBinary(distance, img, read_mode)
+                        cv2.namedWindow('Painted')
+                        cv2.imshow('Painted', result)
+                    #print (str(pos_frame)+" frames ", clicked_flag)
+                else:
+                    print("frame is not ready")
+                    # It is better 1to wait for a while for the next frame to be ready
+                    cv2.waitKey(10)
+                if cv2.waitKey(25) == 27:
+                    cv2.destroyWindow('Painted')
+                    cv2.destroyWindow('Original')
+                    cap.release()
+                    break
+        else:
+            #video file loop
+            while True:
+                flag, img = cap.read()
+                if flag:
+                    # The frame is ready and already captured
+                    if(read_mode == cv2.IMREAD_GRAYSCALE):
+                        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    cv2.imshow('Original', img)
+                    pos_frame = cap.get(cv2.CAP_PROP_POS_FRAMES)
+                    if(clicked_flag):
+                        distance = distanceMatCalculator(
+                            current_pixel_reference, img, read_mode)
+                        result = insertRedByBinary(distance, img, read_mode)
+                        cv2.namedWindow('Painted')
+                        cv2.imshow('Painted', result)
+                    #print (str(pos_frame)+" frames ", clicked_flag)
+                else:
+                    # The next frame is not ready, so we try to read it again
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, pos_frame-1)
+                    print("frame is not ready")
+                    # It is better 1to wait for a while for the next frame to be ready
+                    cv2.waitKey(10)
+                if cap.get(cv2.CAP_PROP_POS_FRAMES) == cap.get(cv2.CAP_PROP_FRAME_COUNT):
+                    # If the number of captured frames is equal to the total number of frames,
+                    # we stop
+                    cap.release()
+                    cv2.destroyWindow('Painted')
+                    cv2.destroyWindow('Original')
+                    break
+                if cv2.waitKey(25) == 27:
+                    cap.release()
+                    cv2.destroyWindow('Painted')
+                    cv2.destroyWindow('Original')
+                    break
+    elif(file_type == "2"):
+        while True:
+            if(clicked_flag):
+                start = time.time()
+                distance = distanceMatCalculator(current_pixel_reference, img, read_mode)
+                result = insertRedByBinary(distance, img, read_mode)
+                end = time.time()
+                clicked_flag = False
+                print(end - start)
+                cv2.namedWindow('Painted')
+                cv2.imshow('Painted',result)
+            if cv2.waitKey(25) == 27:
+                cv2.destroyWindow('Painted')
+                cv2.destroyWindow('Original')
                 break
-        if(file_type == "2" and clicked_flag):
-            start = time.time()
-            distance = distanceMatCalculator(current_pixel_reference, img, read_mode)
-            result = insertRedByBinary(distance, img, read_mode)
-            end = time.time()
-            clicked_flag = False
-            print(end - start)
-            cv2.namedWindow('Painted')
-            cv2.imshow('Painted',result)
-        if cv2.waitKey(25) == 27:
-            break
+            
+            
+        
