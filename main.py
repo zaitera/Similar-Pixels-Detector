@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from sys import exit
 from os import path
+import time
 
 CEND    = '\33[0m'
 CBOLD   = '\33[1m'
@@ -63,56 +64,86 @@ def isImageInGrayScale(image):
         return False
 
 def init():
-    file_type = input("For Video click 1 and for image click 2 ")
+    webcam = False
+    file_name = None
+    cam_number = None
+    file_type = input("For Video press 1 and for image press 2: ")
     print(file_type)
     if(not(file_type == "1" or file_type == "2")):
         exit("Invalid option")  
-    file_name = input("What is the file's name: ")
-    print(file_name)
-    if(not(path.isfile("./"+file_name))):
-        exit("File doesn't exist or isn't in the local directory")
-    return file_type, file_name
+    if file_type == "1":
+        aux = input("For webcam press 1 for a specific video file press 2: ")
+        if aux == "1":
+            webcam = True
+            cam_number = int(input("Enter the webcam camera number as your system identifies it: "),10)
+        else:
+            webcam = False
+        pass
+    if(not(webcam)):
+        file_name = input("What is the file's name: ")
+        print(file_name)
+        if(not(path.isfile("./"+file_name))):
+            exit("File doesn't exist or isn't in the local directory")
+    return file_type, file_name, webcam, cam_number
 
 if __name__ == "__main__":
-    file_type, file_name = init()
-    cap = cv2.VideoCapture(file_name)    
-    flag, img = cap.read()
-    if flag:
-        if(isImageInGrayScale(img)):
-            print("Grayscale detected!")
-            read_mode = cv2.IMREAD_GRAYSCALE
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    file_type, file_name, webcam, cam_number = init()
+    if(file_type == "1"):
+        if webcam :
+            cap = cv2.VideoCapture(cam_number)    
         else:
-            print("RGB")
-            read_mode = cv2.IMREAD_ANYCOLOR
+            cap = cv2.VideoCapture(file_name)    
+        
+        flag, img = cap.read()
+        if (not (flag)):
+            exit("Error while reading the video, try again.")
     else:
-        exit("Error while reading the video, try again.")
+        img = cv2.imread(file_name, cv2.IMREAD_ANYCOLOR)
+    if(isImageInGrayScale(img)):
+        print("Grayscale detected!")
+        read_mode = cv2.IMREAD_GRAYSCALE
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else:
+        print("RGB")
+        read_mode = cv2.IMREAD_ANYCOLOR
     cv2.namedWindow('Original')
     cv2.setMouseCallback('Original',mouseCallBack)
+    if(file_type == "2"):
+        cv2.imshow('Original', img)
     clicked_flag = False
     while True:
-        flag, img = cap.read()
-        if flag:
-            # The frame is ready and already captured
-            if(read_mode == cv2.IMREAD_GRAYSCALE):
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            cv2.imshow('Original', img)           
-            pos_frame = cap.get(cv2.CAP_PROP_POS_FRAMES)
-            if(clicked_flag):
-                distance = distanceMatCalculator(current_pixel_reference, img, read_mode)
-                result = insertRedByBinary(distance, img, read_mode)
-                cv2.namedWindow('Painted')
-                cv2.imshow('Painted',result)
-            #print (str(pos_frame)+" frames ", clicked_flag)
-        else:
-            # The next frame is not ready, so we try to read it again
-            cap.set(cv2.CAP_PROP_POS_FRAMES, pos_frame-1)
-            print ("frame is not ready")
-            # It is better 1to wait for a while for the next frame to be ready
-            cv2.waitKey(10)
+        if(file_type == "1"):
+            flag, img = cap.read()
+            if flag:
+                # The frame is ready and already captured
+                if(read_mode == cv2.IMREAD_GRAYSCALE):
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                cv2.imshow('Original', img)           
+                pos_frame = cap.get(cv2.CAP_PROP_POS_FRAMES)
+                if(clicked_flag):
+                    distance = distanceMatCalculator(current_pixel_reference, img, read_mode)
+                    result = insertRedByBinary(distance, img, read_mode)
+                    cv2.namedWindow('Painted')
+                    cv2.imshow('Painted', result)
+                #print (str(pos_frame)+" frames ", clicked_flag)
+            else:
+                # The next frame is not ready, so we try to read it again
+                cap.set(cv2.CAP_PROP_POS_FRAMES, pos_frame-1)
+                print ("frame is not ready")
+                # It is better 1to wait for a while for the next frame to be ready
+                cv2.waitKey(10)
+            if cap.get(cv2.CAP_PROP_POS_FRAMES) == cap.get(cv2.CAP_PROP_FRAME_COUNT):
+                # If the number of captured frames is equal to the total number of frames,
+                # we stop
+                break
+        if(file_type == "2" and clicked_flag):
+            start = time.time()
+            distance = distanceMatCalculator(current_pixel_reference, img, read_mode)
+            result = insertRedByBinary(distance, img, read_mode)
+            end = time.time()
+            clicked_flag = False
+            print(end - start)
+            cv2.namedWindow('Painted')
+            cv2.imshow('Painted',result)
         if cv2.waitKey(25) == 27:
-            break
-        if cap.get(cv2.CAP_PROP_POS_FRAMES) == cap.get(cv2.CAP_PROP_FRAME_COUNT):
-            # If the number of captured frames is equal to the total number of frames,
-            # we stop
             break
